@@ -17,6 +17,20 @@ class _TodoListPageState extends State<TodoListPage> {
   Todo? deletedTodo;
   int? deletedTodoPos;
 
+  String? errorText;
+
+
+  @override
+  void initState() {
+    super.initState();
+
+    todoRepository.getTodoList().then((value) {
+      setState((){
+        todos = value;
+      });
+    });
+  }
+
   final TextEditingController todoController = TextEditingController();
   final TodoRepository todoRepository = TodoRepository();
 
@@ -38,7 +52,18 @@ class _TodoListPageState extends State<TodoListPage> {
                         decoration: InputDecoration(
                             border: OutlineInputBorder(),
                             labelText: 'Add uma tarefa',
-                            hintText: 'Ex. Estudar Flutter'),
+                            hintText: 'Ex. Estudar Flutter',
+                            errorText:errorText,
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Color(0xff00d7f3),
+                                width: 2,
+                              )
+                            ),
+                          labelStyle: TextStyle(
+                            color: Color(0xff00d7f3),
+                          )
+                        ),
                       ),
                     ),
                     SizedBox(
@@ -47,12 +72,21 @@ class _TodoListPageState extends State<TodoListPage> {
                     ElevatedButton(
                       onPressed: () {
                         String text = todoController.text;
+
+                        if(text.isEmpty){
+                          setState(() {
+                            errorText = "O título não pode ser vázio!";
+                          });
+                          return;
+                        }
+
                         setState(() {
                           Todo newTodo = Todo(
                             title: text,
                             dateTime: DateTime.now(),
                           );
                           todos.add(newTodo);
+                          errorText = null;
                         });
                         todoController.clear();
                         todoRepository.saveTodoList(todos);
@@ -117,6 +151,7 @@ class _TodoListPageState extends State<TodoListPage> {
   void deleteAll() {
     setState(() {
       todos.clear();});
+    todoRepository.saveTodoList(todos);
   }
 
   void onDelete(Todo todo) {
@@ -126,6 +161,7 @@ class _TodoListPageState extends State<TodoListPage> {
     setState(() {
       todos.remove(todo);
     });
+    todoRepository.saveTodoList(todos);
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -143,6 +179,7 @@ class _TodoListPageState extends State<TodoListPage> {
             setState(() {
               todos.insert(deletedTodoPos!, deletedTodo!);
             });
+            todoRepository.saveTodoList(todos);
           },
         ),
       ),
